@@ -1,0 +1,8 @@
+{
+  "name": "Shashank Prajapati - CloudGuard Security Auditor",
+  "description": "Cloud security posture auditor with 5 core modules: simulated cloud environment, resource collectors, 15-rule CIS/NIST compliance engine, risk scoring & accuracy evaluation, plus auto-remediation and AES-256 encrypted executive summary.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,239 @@
+{
+  "metadata": {
+    "dataset_name": "fintech_pci_dss_audit.json",
+    "description": "FinTech Vault Payment Infrastructure - PCI-DSS v4.0 & SOC2 Type II Cloud Security Audit",
+    "generator": "CloudGuard Auditor Engine v1.4.2",
+    "timestamp": "2026-10-28T16:00:00Z",
+    "version": "1.4.2",
+    "compliance_target": [
+      "PCI-DSS v4.0 Req 1, 3, 7, 8, 10",
+      "SOC2 CC6.1 - CC6.6"
+    ]
+  },
+  "environment": {
+    "account_id": "482910482910 (FinTech Prod Vault)",
+    "account_alias": "fintech-payment-vault-prod",
+    "region": "us-east-2",
+    "simulation_engine": "moto-aws-mock-v5",
+    "is_live_aws": false,
+    "notes": "DEMO DATA — Cardholder Data Environment (CDE) Synthetic Audit File"
+  },
+  "summary": {
+    "score": 18,
+    "grade": "F",
+    "findings_count": 10,
+    "severity_counts": {
+      "CRITICAL": 2,
+      "HIGH": 5,
+      "MEDIUM": 2,
+      "LOW": 1
+    },
+    "compliance": {
+      "cis": 15.0,
+      "nist": 12.5
+    },
+    "accuracy": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "planted": 10,
+      "found": 10,
+      "correct": 10
+    }
+  },
+  "resources": {
+    "s3": [
+      {
+        "name": "pci-raw-cardholder-token-vault",
+        "public_acl": true,
+        "encrypted": false,
+        "pab": false,
+        "versioning": true
+      },
+      {
+        "name": "pci-settlement-receipts-2026",
+        "public_acl": false,
+        "encrypted": true,
+        "pab": true,
+        "versioning": true
+      }
+    ],
+    "sg": [
+      {
+        "id": "sg-pci-gw-9921",
+        "group_name": "payment-gateway-dmz",
+        "description": "PCI Ingress DMZ security group",
+        "ip_permissions": [
+          {
+            "protocol": "tcp",
+            "from_port": 22,
+            "to_port": 22,
+            "cidr": "0.0.0.0/0"
+          },
+          {
+            "protocol": "tcp",
+            "from_port": 443,
+            "to_port": 443,
+            "cidr": "0.0.0.0/0"
+          }
+        ]
+      }
+    ],
+    "volumes": [
+      {
+        "id": "vol-pci-core-ledger-db",
+        "encrypted": false,
+        "size_gb": 500,
+        "az": "us-east-2a"
+      }
+    ],
+    "iam_users": [
+      {
+        "name": "pci-deployer-svc",
+        "mfa": false,
+        "admin": true,
+        "key_ages": [
+          385
+        ]
+      },
+      {
+        "name": "settlement-officer",
+        "mfa": true,
+        "admin": false,
+        "key_ages": [
+          45
+        ]
+      }
+    ],
+    "password_policy": {
+      "min_length": 8,
+      "require_symbols": false,
+      "require_numbers": true,
+      "require_uppercase": false,
+      "require_lowercase": true,
+      "max_age_days": 0,
+      "reuse_prevention": 0
+    },
+    "rds": [
+      {
+        "id": "pci-cardholder-postgres-primary",
+        "publicly_accessible": true,
+        "storage_encrypted": false,
+        "engine": "postgres",
+        "db_class": "db.m5.2xlarge"
+      }
+    ],
+    "trails": [],
+    "kms": [
+      {
+        "id": "kms-pci-tokenization-master",
+        "description": "PCI Master Card Encryption Key",
+        "rotation": false,
+        "manager": "CUSTOMER",
+        "state": "Enabled",
+        "key_spec": "SYMMETRIC_DEFAULT"
+      }
+    ]
+  },
+  "findings": [
+    {
+      "rule_id": "S3-001",
+      "severity": "CRITICAL",
+      "service": "S3",
+      "resource": "pci-raw-cardholder-token-vault",
+      "description": "PCI token vault bucket has Public Read ACL enabled (PCI-DSS Req 1.3)",
+      "cis": "2.1.5",
+      "nist": "AC-3",
+      "remediation": "Remove public ACL grants and enforce S3 Block Public Access immediately."
+    },
+    {
+      "rule_id": "S3-002",
+      "severity": "HIGH",
+      "service": "S3",
+      "resource": "pci-raw-cardholder-token-vault",
+      "description": "Cardholder token storage bucket lacks default encryption at rest (PCI-DSS Req 3.4)",
+      "cis": "2.1.1",
+      "nist": "SC-28",
+      "remediation": "Enable SSE-KMS customer-managed key encryption."
+    },
+    {
+      "rule_id": "EC2-001",
+      "severity": "HIGH",
+      "service": "EC2",
+      "resource": "payment-gateway-dmz",
+      "description": "SSH administration port exposed directly to the public internet (PCI-DSS Req 1.2)",
+      "cis": "5.2",
+      "nist": "SC-7",
+      "remediation": "Close port 22 to 0.0.0.0/0 and route administrative traffic through VPN bastion."
+    },
+    {
+      "rule_id": "EC2-003",
+      "severity": "MEDIUM",
+      "service": "EBS",
+      "resource": "vol-pci-core-ledger-db",
+      "description": "Attached transaction ledger EBS volume is unencrypted",
+      "cis": "2.2.1",
+      "nist": "SC-28",
+      "remediation": "Encrypt volume using KMS customer master key."
+    },
+    {
+      "rule_id": "IAM-001",
+      "severity": "HIGH",
+      "service": "IAM",
+      "resource": "pci-deployer-svc",
+      "description": "High-privilege deployment account lacks multi-factor authentication (PCI-DSS Req 8.3)",
+      "cis": "1.10",
+      "nist": "IA-2(1)",
+      "remediation": "Enforce hardware or virtual MFA device requirement."
+    },
+    {
+      "rule_id": "IAM-002",
+      "severity": "CRITICAL",
+      "service": "IAM",
+      "resource": "pci-deployer-svc",
+      "description": "Service user possesses unrestricted AdministratorAccess (*:*) in Cardholder environment",
+      "cis": "1.16",
+      "nist": "AC-6",
+      "remediation": "Apply role-based access control and principle of least privilege."
+    },
+    {
+      "rule_id": "IAM-003",
+      "severity": "MEDIUM",
+      "service": "IAM",
+      "resource": "pci-deployer-svc",
+      "description": "Payment service access keys have not been rotated in 385 days (PCI-DSS Req 8.2.4)",
+      "cis": "1.14",
+      "nist": "IA-5",
+      "remediation": "Rotate credentials within a strict 90-day cycle."
+    },
+    {
+      "rule_id": "RDS-001",
+      "severity": "HIGH",
+      "service": "RDS",
+      "resource": "pci-cardholder-postgres-primary",
+      "description": "Cardholder database instance is publicly reachable over public internet IP",
+      "cis": "2.3.3",
+      "nist": "SC-7",
+      "remediation": "Disable PubliclyAccessible flag and isolate inside private database subnets."
+    },
+    {
+      "rule_id": "RDS-002",
+      "severity": "HIGH",
+      "service": "RDS",
+      "resource": "pci-cardholder-postgres-primary",
+      "description": "Primary database storage lacks encryption at rest for sensitive card records",
+      "cis": "2.3.1",
+      "nist": "SC-28",
+      "remediation": "Migrate database to encrypted storage volume."
+    },
+    {
+      "rule_id": "KMS-001",
+      "severity": "LOW",
+      "service": "KMS",
+      "resource": "kms-pci-tokenization-master",
+      "description": "KMS Tokenization Master Key rotation is disabled",
+      "cis": "3.8",
+      "nist": "SC-12",
+      "remediation": "Enable automated yearly key rotation."
+    }
+  ]
+}

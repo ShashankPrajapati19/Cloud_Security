@@ -1,0 +1,343 @@
+{
+  "metadata": {
+    "dataset_name": "sample_audit.json",
+    "description": "CloudGuard Comprehensive Audit Dataset - Enterprise Cloud Architecture with 15 Planted Flaws",
+    "generator": "CloudGuard Auditor Engine v1.4.2",
+    "timestamp": "2026-10-28T14:30:00Z",
+    "version": "1.4.2",
+    "compliance_target": [
+      "CIS AWS Foundations Benchmark v1.4.0",
+      "NIST SP 800-53 Rev. 5"
+    ]
+  },
+  "environment": {
+    "account_id": "714305265226 (Enterprise Core)",
+    "account_alias": "enterprise-security-lab",
+    "region": "us-east-1",
+    "simulation_engine": "moto-aws-mock-v5",
+    "is_live_aws": false,
+    "notes": "DEMO DATA — SIMULATED, NOT A LIVE AWS SCAN. Ground-truth benchmark dataset."
+  },
+  "summary": {
+    "score": 10,
+    "grade": "F",
+    "findings_count": 15,
+    "severity_counts": {
+      "CRITICAL": 3,
+      "HIGH": 6,
+      "MEDIUM": 4,
+      "LOW": 2
+    },
+    "compliance": {
+      "cis": 0.0,
+      "nist": 0.0
+    },
+    "accuracy": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "planted": 15,
+      "found": 15,
+      "correct": 15
+    }
+  },
+  "resources": {
+    "s3": [
+      {
+        "name": "corp-public-logs-bucket",
+        "public_acl": true,
+        "encrypted": false,
+        "pab": false,
+        "versioning": true
+      },
+      {
+        "name": "corp-secure-data-lake",
+        "public_acl": false,
+        "encrypted": true,
+        "pab": true,
+        "versioning": true
+      },
+      {
+        "name": "corp-backup-vault-no-versioning",
+        "public_acl": false,
+        "encrypted": true,
+        "pab": true,
+        "versioning": false
+      }
+    ],
+    "sg": [
+      {
+        "id": "sg-01aa9901",
+        "group_name": "default",
+        "description": "default VPC security group",
+        "ip_permissions": []
+      },
+      {
+        "id": "sg-02bb9902",
+        "group_name": "bastion-open-ssh",
+        "description": "SSH open to internet 0.0.0.0/0",
+        "ip_permissions": [
+          {
+            "protocol": "tcp",
+            "from_port": 22,
+            "to_port": 22,
+            "cidr": "0.0.0.0/0"
+          }
+        ]
+      },
+      {
+        "id": "sg-03cc9903",
+        "group_name": "dev-ingress-open-all",
+        "description": "All inbound traffic open 0.0.0.0/0",
+        "ip_permissions": [
+          {
+            "protocol": "-1",
+            "cidr": "0.0.0.0/0"
+          }
+        ]
+      },
+      {
+        "id": "sg-04dd9904",
+        "group_name": "prod-web-https",
+        "description": "HTTPS only for reverse proxy",
+        "ip_permissions": [
+          {
+            "protocol": "tcp",
+            "from_port": 443,
+            "to_port": 443,
+            "cidr": "0.0.0.0/0"
+          }
+        ]
+      }
+    ],
+    "volumes": [
+      {
+        "id": "vol-0a89f31c2d449e55a",
+        "encrypted": false,
+        "size_gb": 120,
+        "az": "us-east-1a"
+      },
+      {
+        "id": "vol-0b77e22d91a4000f5",
+        "encrypted": true,
+        "size_gb": 250,
+        "az": "us-east-1a"
+      }
+    ],
+    "iam_users": [
+      {
+        "name": "dev-admin",
+        "mfa": false,
+        "admin": true,
+        "key_ages": []
+      },
+      {
+        "name": "analyst-auditor",
+        "mfa": true,
+        "admin": false,
+        "key_ages": []
+      },
+      {
+        "name": "legacy-ci-service",
+        "mfa": true,
+        "admin": false,
+        "key_ages": [2479]
+      }
+    ],
+    "password_policy": {
+      "min_length": 6,
+      "require_symbols": false,
+      "require_numbers": false,
+      "require_uppercase": false,
+      "require_lowercase": false,
+      "max_age_days": 0,
+      "reuse_prevention": 0
+    },
+    "rds": [
+      {
+        "id": "corp-aurora-production",
+        "publicly_accessible": true,
+        "storage_encrypted": false,
+        "engine": "aurora-postgresql",
+        "db_class": "db.r6g.large"
+      },
+      {
+        "id": "corp-aurora-replica-safe",
+        "publicly_accessible": false,
+        "storage_encrypted": true,
+        "engine": "aurora-postgresql",
+        "db_class": "db.r6g.large"
+      }
+    ],
+    "trails": [],
+    "kms": [
+      {
+        "id": "c53d1f55-a756-4c14-9a6e-e2f36b1a00e6",
+        "description": "CMK application tokenization key (rotation OFF)",
+        "rotation": false,
+        "manager": "CUSTOMER",
+        "state": "Enabled",
+        "key_spec": "SYMMETRIC_DEFAULT"
+      },
+      {
+        "id": "56341802-8890-4991-91fc-9b43c9ea973e",
+        "description": "CMK database encryption key (rotation ON)",
+        "rotation": true,
+        "manager": "CUSTOMER",
+        "state": "Enabled",
+        "key_spec": "SYMMETRIC_DEFAULT"
+      }
+    ]
+  },
+  "findings": [
+    {
+      "rule_id": "S3-001",
+      "severity": "CRITICAL",
+      "service": "S3",
+      "resource": "corp-public-logs-bucket",
+      "description": "S3 bucket is open to the public (ACL grant to AllUsers)",
+      "cis": "2.1.5",
+      "nist": "AC-3",
+      "remediation": "Make the ACL private and turn on S3 Block Public Access across all 4 controls."
+    },
+    {
+      "rule_id": "S3-002",
+      "severity": "HIGH",
+      "service": "S3",
+      "resource": "corp-public-logs-bucket",
+      "description": "S3 bucket has no default server-side encryption enabled",
+      "cis": "2.1.1",
+      "nist": "SC-28",
+      "remediation": "Turn on default encryption (SSE-S3 AES-256 or SSE-KMS CMK)."
+    },
+    {
+      "rule_id": "S3-003",
+      "severity": "MEDIUM",
+      "service": "S3",
+      "resource": "corp-public-logs-bucket",
+      "description": "S3 Block Public Access is not fully enabled at bucket level",
+      "cis": "2.1.5",
+      "nist": "AC-3",
+      "remediation": "Enable all four S3 Block Public Access configurations."
+    },
+    {
+      "rule_id": "S3-004",
+      "severity": "LOW",
+      "service": "S3",
+      "resource": "corp-backup-vault-no-versioning",
+      "description": "S3 bucket versioning is disabled; vulnerable to ransomware or accidental deletes",
+      "cis": "-",
+      "nist": "CP-9",
+      "remediation": "Enable S3 bucket versioning with optional MFA Delete."
+    },
+    {
+      "rule_id": "EC2-001",
+      "severity": "HIGH",
+      "service": "EC2",
+      "resource": "bastion-open-ssh",
+      "description": "SSH port 22 is open to the world (0.0.0.0/0)",
+      "cis": "5.2",
+      "nist": "SC-7",
+      "remediation": "Restrict SSH to trusted CIDR blocks (/32) or transition to AWS Systems Manager Session Manager."
+    },
+    {
+      "rule_id": "EC2-002",
+      "severity": "CRITICAL",
+      "service": "EC2",
+      "resource": "dev-ingress-open-all",
+      "description": "ALL ingress ports (-1 protocol) open to the internet (0.0.0.0/0)",
+      "cis": "5.2",
+      "nist": "SC-7",
+      "remediation": "Remove wildcard 0.0.0.0/0 ingress rule and scope down to specific application ports."
+    },
+    {
+      "rule_id": "EC2-003",
+      "severity": "MEDIUM",
+      "service": "EBS",
+      "resource": "vol-0a89f31c2d449e55a",
+      "description": "Attached EBS root storage volume is unencrypted",
+      "cis": "2.2.1",
+      "nist": "SC-28",
+      "remediation": "Take snapshot, copy snapshot with KMS encryption, and create encrypted volume replacement."
+    },
+    {
+      "rule_id": "IAM-001",
+      "severity": "HIGH",
+      "service": "IAM",
+      "resource": "dev-admin",
+      "description": "Privileged administrator user does not have Multi-Factor Authentication (MFA) enabled",
+      "cis": "1.10",
+      "nist": "IA-2(1)",
+      "remediation": "Enforce virtual FIDO2/WebAuthn or TOTP MFA token registration."
+    },
+    {
+      "rule_id": "IAM-002",
+      "severity": "CRITICAL",
+      "service": "IAM",
+      "resource": "dev-admin",
+      "description": "IAM user has unrestricted administrator access (*:*) via AdministratorAccess policy",
+      "cis": "1.16",
+      "nist": "AC-6",
+      "remediation": "Detach AdministratorAccess and attach least-privilege role with permission boundaries."
+    },
+    {
+      "rule_id": "IAM-003",
+      "severity": "MEDIUM",
+      "service": "IAM",
+      "resource": "legacy-ci-service",
+      "description": "Active IAM access key is older than 90 days (2,479 days old)",
+      "cis": "1.14",
+      "nist": "IA-5",
+      "remediation": "Rotate IAM access key immediately and decommission old inactive credentials."
+    },
+    {
+      "rule_id": "IAM-004",
+      "severity": "MEDIUM",
+      "service": "IAM",
+      "resource": "account",
+      "description": "Account password policy does not meet CIS AWS Benchmark complexity standards",
+      "cis": "1.8",
+      "nist": "IA-5(1)",
+      "remediation": "Update account password policy: min length 14, uppercase, lowercase, numbers, symbols, 90-day expiry."
+    },
+    {
+      "rule_id": "RDS-001",
+      "severity": "HIGH",
+      "service": "RDS",
+      "resource": "corp-aurora-production",
+      "description": "RDS database instance has public IP assignment and is accessible from the internet",
+      "cis": "2.3.3",
+      "nist": "SC-7",
+      "remediation": "Modify DB instance setting PubliclyAccessible=false and deploy inside private VPC subnets."
+    },
+    {
+      "rule_id": "RDS-002",
+      "severity": "HIGH",
+      "service": "RDS",
+      "resource": "corp-aurora-production",
+      "description": "RDS relational database storage is unencrypted at rest",
+      "cis": "2.3.1",
+      "nist": "SC-28",
+      "remediation": "Snapshot unencrypted instance, copy snapshot with AWS KMS CMK encryption, and restore."
+    },
+    {
+      "rule_id": "CT-001",
+      "severity": "HIGH",
+      "service": "CloudTrail",
+      "resource": "account",
+      "description": "No active multi-region CloudTrail trail found; API audit logging is disabled",
+      "cis": "3.1",
+      "nist": "AU-2",
+      "remediation": "Create an organization-wide multi-region CloudTrail trail logging all management and data events."
+    },
+    {
+      "rule_id": "KMS-001",
+      "severity": "LOW",
+      "service": "KMS",
+      "resource": "c53d1f55-a756-4c14-9a6e-e2f36b1a00e6",
+      "description": "Customer managed KMS master key does not have automatic yearly rotation enabled",
+      "cis": "3.8",
+      "nist": "SC-12",
+      "remediation": "Enable annual key rotation via aws kms enable-key-rotation."
+    }
+  ]
+}

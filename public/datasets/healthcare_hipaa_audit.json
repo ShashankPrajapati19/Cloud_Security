@@ -1,0 +1,201 @@
+{
+  "metadata": {
+    "dataset_name": "healthcare_hipaa_audit.json",
+    "description": "Apex HealthCloud Systems - HIPAA Security Rule (45 CFR § 164.312) Cloud Security Audit",
+    "generator": "CloudGuard Auditor Engine v1.4.2",
+    "timestamp": "2026-10-28T18:15:00Z",
+    "version": "1.4.2",
+    "compliance_target": [
+      "HIPAA Security Rule",
+      "NIST SP 800-53 Rev. 5 SC-28, AC-3, AU-2"
+    ]
+  },
+  "environment": {
+    "account_id": "928173645012 (Apex Health EHR)",
+    "account_alias": "apex-healthcloud-ehr-prod",
+    "region": "us-west-2",
+    "simulation_engine": "moto-aws-mock-v5",
+    "is_live_aws": false,
+    "notes": "DEMO DATA — Protected Health Information (PHI) Synthetic Audit File"
+  },
+  "summary": {
+    "score": 24,
+    "grade": "F",
+    "findings_count": 8,
+    "severity_counts": {
+      "CRITICAL": 2,
+      "HIGH": 4,
+      "MEDIUM": 2,
+      "LOW": 0
+    },
+    "compliance": {
+      "cis": 25.0,
+      "nist": 20.0
+    },
+    "accuracy": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "planted": 8,
+      "found": 8,
+      "correct": 8
+    }
+  },
+  "resources": {
+    "s3": [
+      {
+        "name": "apex-ehr-patient-imaging-archive",
+        "public_acl": true,
+        "encrypted": false,
+        "pab": false,
+        "versioning": false
+      },
+      {
+        "name": "apex-audit-logs-hipaa-cold",
+        "public_acl": false,
+        "encrypted": true,
+        "pab": true,
+        "versioning": true
+      }
+    ],
+    "sg": [
+      {
+        "id": "sg-telehealth-api-gateway",
+        "group_name": "telehealth-fhir-ingress",
+        "description": "FHIR HL7 API Security Group",
+        "ip_permissions": [
+          {
+            "protocol": "-1",
+            "cidr": "0.0.0.0/0"
+          }
+        ]
+      }
+    ],
+    "volumes": [
+      {
+        "id": "vol-dicom-mri-cache",
+        "encrypted": false,
+        "size_gb": 800,
+        "az": "us-west-2a"
+      }
+    ],
+    "iam_users": [
+      {
+        "name": "telehealth-dr-admin",
+        "mfa": false,
+        "admin": true,
+        "key_ages": []
+      }
+    ],
+    "password_policy": {
+      "min_length": 6,
+      "require_symbols": false,
+      "require_numbers": false,
+      "require_uppercase": false,
+      "require_lowercase": false,
+      "max_age_days": 0,
+      "reuse_prevention": 0
+    },
+    "rds": [
+      {
+        "id": "apex-fhir-patient-records-db",
+        "publicly_accessible": true,
+        "storage_encrypted": false,
+        "engine": "aurora-mysql",
+        "db_class": "db.r5.xlarge"
+      }
+    ],
+    "trails": [],
+    "kms": [
+      {
+        "id": "kms-phi-encryption-key-01",
+        "description": "HIPAA PHI Data Key",
+        "rotation": true,
+        "manager": "CUSTOMER",
+        "state": "Enabled",
+        "key_spec": "SYMMETRIC_DEFAULT"
+      }
+    ]
+  },
+  "findings": [
+    {
+      "rule_id": "S3-001",
+      "severity": "CRITICAL",
+      "service": "S3",
+      "resource": "apex-ehr-patient-imaging-archive",
+      "description": "Electronic Protected Health Information (ePHI) bucket is publicly readable via ACL (HIPAA 164.312(a)(1))",
+      "cis": "2.1.5",
+      "nist": "AC-3",
+      "remediation": "Immediately apply S3 Block Public Access and revoke public ACL grants."
+    },
+    {
+      "rule_id": "S3-002",
+      "severity": "HIGH",
+      "service": "S3",
+      "resource": "apex-ehr-patient-imaging-archive",
+      "description": "Patient imaging archive has no encryption at rest (HIPAA 164.312(a)(2)(iv))",
+      "cis": "2.1.1",
+      "nist": "SC-28",
+      "remediation": "Enable SSE-KMS encryption with customer managed key."
+    },
+    {
+      "rule_id": "S3-004",
+      "severity": "LOW",
+      "service": "S3",
+      "resource": "apex-ehr-patient-imaging-archive",
+      "description": "Bucket versioning disabled; lacks ransomware rollback protection for ePHI files",
+      "cis": "-",
+      "nist": "CP-9",
+      "remediation": "Enable bucket versioning with object lock."
+    },
+    {
+      "rule_id": "EC2-002",
+      "severity": "CRITICAL",
+      "service": "EC2",
+      "resource": "telehealth-fhir-ingress",
+      "description": "FHIR API gateway security group allows ALL ingress traffic from 0.0.0.0/0",
+      "cis": "5.2",
+      "nist": "SC-7",
+      "remediation": "Restrict traffic to TLS 443 with CloudFront / AWS WAF fronting."
+    },
+    {
+      "rule_id": "EC2-003",
+      "severity": "MEDIUM",
+      "service": "EBS",
+      "resource": "vol-dicom-mri-cache",
+      "description": "EBS storage holding DICOM MRI patient scans is unencrypted",
+      "cis": "2.2.1",
+      "nist": "SC-28",
+      "remediation": "Encrypt EBS volume using AWS KMS."
+    },
+    {
+      "rule_id": "IAM-001",
+      "severity": "HIGH",
+      "service": "IAM",
+      "resource": "telehealth-dr-admin",
+      "description": "Clinical administrator account lacks MFA (HIPAA 164.312(d))",
+      "cis": "1.10",
+      "nist": "IA-2(1)",
+      "remediation": "Enforce mandatory MFA enrollment before administrative console access."
+    },
+    {
+      "rule_id": "RDS-001",
+      "severity": "HIGH",
+      "service": "RDS",
+      "resource": "apex-fhir-patient-records-db",
+      "description": "Patient records database has a public internet endpoint (HIPAA 164.312(e)(1))",
+      "cis": "2.3.3",
+      "nist": "SC-7",
+      "remediation": "Disable PubliclyAccessible flag and deploy within isolated VPC subnets."
+    },
+    {
+      "rule_id": "CT-001",
+      "severity": "HIGH",
+      "service": "CloudTrail",
+      "resource": "account",
+      "description": "CloudTrail audit logging is inactive (HIPAA 164.312(b) Audit Controls)",
+      "cis": "3.1",
+      "nist": "AU-2",
+      "remediation": "Enable multi-region CloudTrail with CloudWatch alarms."
+    }
+  ]
+}
